@@ -1,8 +1,12 @@
 {
-  "name": "milu2openhab",
+  "name": "checkserver2openhab",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tmala/checkserver2openhab.git"
+  },
   "version": "1.0.0",
   "description": "Gets data from api.nilu.no and updates items in openHAB",
-  "main": "nilu2openhab.ns",
+  "main": "checkserver2openhab.ns",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

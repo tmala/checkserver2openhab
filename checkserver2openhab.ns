@@ -25,14 +25,12 @@ serverStatusMessage = 'Updating serverstatus ' + ts();
 sendCommand(OPENHAB_ITEM_ServerStatus, serverStatusMessage);
 
 
-// Then run updates now and every hour from now on
+// Run updates now and every hour from now on
 runUpdate();
 // Run Every Hour after first run
-/*
 setInterval(() => {
     runUpdate();
 }, 60 * 60 * 1000);
-*/
 
 function runUpdate() {
     // First some Basic Info about this server
