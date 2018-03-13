@@ -5,6 +5,7 @@ importScripts = require('./importscripts.js').importScripts;
 importScripts('./settings.ns');
 importScripts('./myLogger.ns');
 let XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+const NAME_LENGTH = 18;
 
 setCurrentLogLevel(LOGLEVEL_DEBUG);
 
@@ -70,7 +71,8 @@ function runUpdate() {
 function addPad(s) {
     let ret = '';
     ret += s;
-    ret += '.'.repeat(20 - s.length);
+
+    ret += '.'.repeat(NAME_LENGTH - s.length);
     ret += ': ';
     return ret;
 }
@@ -130,7 +132,12 @@ function checkFR24Feed(myCmd) {
     try {
         stdout = childProcess.execSync(myCmd);
         if (stdout && stdout.length>0) {
-            return '' + stdout;
+            let ret = '';
+            let lines = stdout.val().split('\n');
+            for(let i = 0; i < lines.length; i++){
+                ret = '\n' + ' '.repeat(NAME_LENGTH + 2) + lines[i];
+            }
+            return ret;
         } else {
             return ' Unable to check using ' + myCmd;
         }
