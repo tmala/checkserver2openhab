@@ -132,13 +132,7 @@ function checkFR24Feed(myCmd) {
     try {
         stdout = childProcess.execSync(myCmd);
         if (stdout && stdout.length>0) {
-            let tmpStr = '' + stdout;
-            let ret = '';
-            let lines = tmpStr.val().split('\n');
-            for(let i = 0; i < lines.length; i++){
-                ret = '\n' + ' '.repeat(NAME_LENGTH + 2) + lines[i];
-            }
-            return ret;
+            return  '' + stdout;
         } else {
             return ' Unable to check using ' + myCmd;
         }
