@@ -1,0 +1,35 @@
+/*
+Some simple logger-functions
+*/
+
+const LOGLEVEL_FATAL = 5;
+const LOGLEVEL_ERROR = 4;
+const LOGLEVEL_INFO  = 3;
+const LOGLEVEL_DEBUG = 2;
+const LOGLEVEL_TRACE = 1;
+
+let CURRENT_LOGLEVEL = LOGLEVEL_INFO;
+
+function isTrace() {
+    return CURRENT_LOGLEVEL <= LOGLEVEL_TRACE;
+}
+function isDebug() {
+    return CURRENT_LOGLEVEL <= LOGLEVEL_DEBUG;
+}
+function isInfo() {
+    return CURRENT_LOGLEVEL <= LOGLEVEL_INFO;
+}
+function isError() {
+    return CURRENT_LOGLEVEL <= LOGLEVEL_ERROR;
+}
+function isFatal() {
+    return CURRENT_LOGLEVEL <= LOGLEVEL_FATAL;
+}
+
+function setCurrentLogLevel(newLogLevel) {
+    if (newLogLevel>=LOGLEVEL_TRACE && newLogLevel<=LOGLEVEL_FATAL) {
+        CURRENT_LOGLEVEL = newLogLevel;
+    } else {
+        console.error('New LogLevel is not valid (' + newLogLevel + ')');
+    }
+}

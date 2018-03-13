@@ -1,0 +1,16 @@
+{
+  "name": "milu2openhab",
+  "version": "1.0.0",
+  "description": "Gets data from api.nilu.no and updates items in openHAB",
+  "main": "nilu2openhab.ns",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tor Mala",
+  "license": "MIT",
+  "dependencies": {
+    "bytes": "^3.0.0",
+    "ip": "^1.1.5",
+    "xmlhttprequest": "^1.8.0"
+  }
+}

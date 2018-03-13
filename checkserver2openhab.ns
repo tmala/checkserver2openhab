@@ -1,0 +1,178 @@
+/*
+Get server-status and reports to an item at openHAB
+*/
+importScripts = require('./importscripts.js').importScripts;
+importScripts('./settings.ns');
+importScripts('./myLogger.ns');
+let XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+const os = require('os');
+const ip = require('ip');
+const bytes = require('bytes');
+
+const OPENHAB_ITEM_ServerStatus = 'ServerStatus_malabook';
+setCurrentLogLevel(LOGLEVEL_TRACE);
+
+if (isInfo()) {
+    console.log(ts() + " Starting CheckServer2openHAB");
+}
+
+const DELAY_BETWEEN_CALLS = 5*1000; // 5 seconds
+
+let serverStatusMessage = '';
+
+// Firstly we just report that this utility is running
+serverStatusMessage = 'Updating serverstatus ' + ts();
+sendCommand(OPENHAB_ITEM_ServerStatus, serverStatusMessage);
+
+
+// Then run updates now and every hour from now on
+runUpdate();
+// Run Every Hour after first run
+/*
+setInterval(() => {
+    runUpdate();
+}, 60 * 60 * 1000);
+*/
+
+function runUpdate() {
+    // First some Basic Info about this server
+    serverStatusMessage = '';
+    serverStatusMessage += '\nHostname...........: ' + os.hostname();
+    serverStatusMessage += '\nIP-Address.........: ' + ip.address();
+    serverStatusMessage += '\nOS.................: ' + os.type() +' ' + os.platform() + ' ' + os.arch() + ' ' + os.release();
+    const upTime = seconds2json(os.uptime);
+    serverStatusMessage += '\nUpTime.............: ' + upTime.days + ' days, ' + fix2digit(upTime.hours) + ':' + fix2digit(upTime.minutes) + ':' + fix2digit(upTime.seconds);
+    serverStatusMessage += '\nLoad...............: ' + os.loadavg();
+    serverStatusMessage += '\nMemory.............: ' + bytes.format(os.totalmem()) + ',  ' + bytes.format(os.freemem()) + ' free';
+    // Check some local running processes
+    serverStatusMessage += '\nnilu2openHAB.......: ' + checkProcess(PIDFILE_nilu2openHAB, 'node nilu2openhab');
+    serverStatusMessage += '\ndweetio2openHAB....: ' + checkProcess(PIDFILE_dweetio2openHAB, 'node dweetio2openhab');
+    serverStatusMessage += '\nFlightRadar24feed..: ' + checkProcess(PIDFILE_flightradar24feed, 'fr24feed');
+
+    // TODO: Check some local running services
+    // - jenkins
+    // - nginx
+
+    // Send the data to openHAB
+    setTimeout(
+        function() {
+            serverStatusMessage = '\nLastRun............: ' + ts() + serverStatusMessage;
+            sendCommand(OPENHAB_ITEM_ServerStatus, serverStatusMessage);
+            if (isInfo()) {
+                console.log(ts() + ' openHAB item: ' + OPENHAB_ITEM_ServerStatus + ' => ' + serverStatusMessage.substr(0,20) + '...');
+            }
+            },
+        DELAY_BETWEEN_CALLS);
+}
+
+/**
+ * Checks that the process with PID given in the pidFile is running
+ * Returns a String telling the status of the process
+ *
+ * @param pidFileName
+ * @param nodescriptName
+ */
+function checkProcess(pidFileName, nodescriptName) {
+    let fs = require('fs');
+    if (fs.existsSync(pidFileName)) {
+        // Do something
+        let myPid = fs.readFileSync(pidFileName, 'utf8');
+        if ( !myPid || myPid.trim().length<=1 ) {
+            return 'No such PID-file found';
+        }
+
+        myPid = myPid.trim();
+
+        const childProcess = require('child_process');
+        let stdout = childProcess.execSync('ps -ef | grep "' + nodescriptName + '" | grep ' + myPid +  ' | grep -v grep');
+        if (stdout && stdout.length>0) {
+            if (isTrace()) {
+                console.log(ts() + ' OK stdout: ' + stdout);
+            }
+            return 'Process ' + nodescriptName +  ' is running with PID=' + myPid;
+        } else {
+            if (isInfo()) {
+                console.log(ts() + ' ERROR stdout: ' + stdout);
+            }
+            return 'No such process is running';
+        }
+    } else {
+        return 'PID-file does not exist';
+    }
+}
+
+
+/**
+ * Sends a command to update an openHAB Item
+ *
+ * @param itemId
+ * @param command
+ */
+function sendCommand(itemId, command) {
+    let xhr_sendCommand = new XMLHttpRequest();
+    xhr_sendCommand.withCredentials = true;
+    xhr_sendCommand.addEventListener("readystatechange", function () {
+        if (this.readyState === this.DONE) {
+            if (this.status === 200) {
+                let res = this.responseText;
+                if (isTrace()) {
+                    console.log(ts() + " " + this.status +  " OK => Response: ", res);
+                }
+            } else {
+                let res = this.responseText;
+                if (isError()) {
+                    console.log(ts() + " " + this.status +  " " + this.statusText + " => Response: ", JSON.stringify(res, null, 2) );
+                }
+            }
+        }
+    });
+    xhr_sendCommand.open('POST', OPENHAB_URL + itemId);
+    xhr_sendCommand.setRequestHeader("accept", "application/json");
+    xhr_sendCommand.send(command);
+}
+
+/***********************************************************
+ * Some DATETIME-related functions
+ ***********************************************************
+ */
+function ts() {
+    let d = new Date();
+    return date2str_NO(d);
+}
+function date2str_NO(d) {
+    return fix2digit(d.getDate()) + '.' + fixMonth(d.getMonth()) + '.' + d.getFullYear() + ' ' +
+        fix2digit(d.getHours()) + ':' + fix2digit(d.getMinutes()) + ':' + fix2digit(d.getSeconds());
+}
+function fixMonth(num) {
+    let month = num + 1;
+    if (month < 10) {
+        return '0' + month;
+    } else {
+        return '' + month;
+    }
+}
+function fix2digit(num) {
+    if (num < 10) {
+        return '0' + num;
+    } else {
+        return '' + num;
+    }
+}
+function seconds2json(seconds) {
+    let d, h, m, s;
+
+    if (isNaN(seconds)) {
+        throw new TypeError('Value sent to seconds-converter must be a number.');
+    }
+
+    m = Math.floor(seconds / 60);
+    s = seconds % 60;
+    h = Math.floor(m / 60);
+    m = m % 60;
+    d = Math.floor(h / 24);
+    h = h % 24;
+
+    return {days: d, hours: h, minutes: m, seconds: s}
+}
+
+
