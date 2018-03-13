@@ -19,8 +19,6 @@ let serverStatusMessage = '';
 serverStatusMessage = 'Updating serverstatus ' + ts();
 sendCommand(OPENHAB_ITEM_ServerStatus, serverStatusMessage);
 
-runUpdate();
-
 // Run Every Hour after first run if parameter 'forever' is present
 let runForEver = false;
 process.argv.forEach(function (val, index, array) {
@@ -29,14 +27,14 @@ process.argv.forEach(function (val, index, array) {
     }
 });
 
-// Give time to process arguments
-if (runForEver) {
-    setTimeout(() => {
+setTimeout(() => {
+    runUpdate();
+    if (runForEver) {
         setInterval(() => {
             runUpdate();
         }, 60 * 60 * 1000);
-    }, 1000);
-}
+    }
+}, 1000);
 
 function runUpdate() {
     const os = require('os');
