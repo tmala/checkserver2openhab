@@ -1,15 +1,11 @@
-/*
-Get server-status and reports to an item at openHAB
-*/
+/**
+ * Get server-status and reports to an item at openHAB
+ */
 importScripts = require('./importscripts.js').importScripts;
 importScripts('./settings.ns');
 importScripts('./myLogger.ns');
 let XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
-const os = require('os');
-const ip = require('ip');
-const bytes = require('bytes');
 
-const OPENHAB_ITEM_ServerStatus = 'ServerStatus_malabook';
 setCurrentLogLevel(LOGLEVEL_TRACE);
 
 if (isInfo()) {
@@ -20,12 +16,9 @@ const DELAY_BETWEEN_CALLS = 5*1000; // 5 seconds
 
 let serverStatusMessage = '';
 
-// Firstly we just report that this utility is running
 serverStatusMessage = 'Updating serverstatus ' + ts();
 sendCommand(OPENHAB_ITEM_ServerStatus, serverStatusMessage);
 
-
-// Run updates now and every hour from now on
 runUpdate();
 // Run Every Hour after first run
 setInterval(() => {
@@ -33,23 +26,22 @@ setInterval(() => {
 }, 60 * 60 * 1000);
 
 function runUpdate() {
+    const os = require('os');
+    const ip = require('ip');
+    const bytes = require('bytes');
     // First some Basic Info about this server
     serverStatusMessage = '';
-    serverStatusMessage += '\nHostname...........: ' + os.hostname();
-    serverStatusMessage += '\nIP-Address.........: ' + ip.address();
-    serverStatusMessage += '\nOS.................: ' + os.type() +' ' + os.platform() + ' ' + os.arch() + ' ' + os.release();
+    serverStatusMessage += '\nHostname : ' + os.hostname();
+    serverStatusMessage += '\nIP-Address : ' + ip.address();
+    serverStatusMessage += '\nOS : ' + os.type() +' ' + os.platform() + ' ' + os.arch() + ' ' + os.release();
     const upTime = seconds2json(os.uptime);
-    serverStatusMessage += '\nUpTime.............: ' + upTime.days + ' days, ' + fix2digit(upTime.hours) + ':' + fix2digit(upTime.minutes) + ':' + fix2digit(upTime.seconds);
-    serverStatusMessage += '\nLoad...............: ' + os.loadavg();
-    serverStatusMessage += '\nMemory.............: ' + bytes.format(os.totalmem()) + ',  ' + bytes.format(os.freemem()) + ' free';
+    serverStatusMessage += '\nUpTime : ' + upTime.days + ' days, ' + fix2digit(upTime.hours) + ':' + fix2digit(upTime.minutes) + ':' + fix2digit(upTime.seconds);
+    serverStatusMessage += '\nLoad : ' + os.loadavg();
+    serverStatusMessage += '\nMemory : ' + bytes.format(os.totalmem()) + ',  ' + bytes.format(os.freemem()) + ' free';
     // Check some local running processes
-    serverStatusMessage += '\nnilu2openHAB.......: ' + checkProcess(PIDFILE_nilu2openHAB, 'node nilu2openhab');
-    serverStatusMessage += '\ndweetio2openHAB....: ' + checkProcess(PIDFILE_dweetio2openHAB, 'node dweetio2openhab');
-    serverStatusMessage += '\nFlightRadar24feed..: ' + checkProcess(PIDFILE_flightradar24feed, 'fr24feed');
-
-    // TODO: Check some local running services
-    // - jenkins
-    // - nginx
+    serverStatusMessage += '\n' + S1_NAME + ' : ' + checkProcess(S1_PIDFILE, S1_PROCESS);
+    serverStatusMessage += '\n' + S2_NAME + ' : ' + checkProcess(S2_PIDFILE, S2_PROCESS);
+    serverStatusMessage += '\n' + S3_NAME + ' : ' + checkProcess(S3_PIDFILE, S3_PROCESS);
 
     // Send the data to openHAB
     setTimeout(
@@ -68,26 +60,23 @@ function runUpdate() {
  * Returns a String telling the status of the process
  *
  * @param pidFileName
- * @param nodescriptName
+ * @param processName
  */
-function checkProcess(pidFileName, nodescriptName) {
+function checkProcess(pidFileName, processName) {
     let fs = require('fs');
     if (fs.existsSync(pidFileName)) {
-        // Do something
         let myPid = fs.readFileSync(pidFileName, 'utf8');
         if ( !myPid || myPid.trim().length<=1 ) {
             return 'No such PID-file found';
         }
-
         myPid = myPid.trim();
-
         const childProcess = require('child_process');
-        let stdout = childProcess.execSync('ps -ef | grep "' + nodescriptName + '" | grep ' + myPid +  ' | grep -v grep');
+        let stdout = childProcess.execSync('ps -ef | grep "' + processName + '" | grep ' + myPid +  ' | grep -v grep');
         if (stdout && stdout.length>0) {
             if (isTrace()) {
                 console.log(ts() + ' OK stdout: ' + stdout);
             }
-            return 'Process ' + nodescriptName +  ' is running with PID=' + myPid;
+            return 'Process ' + processName +  ' is running with PID=' + myPid;
         } else {
             if (isInfo()) {
                 console.log(ts() + ' ERROR stdout: ' + stdout);
