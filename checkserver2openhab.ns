@@ -6,7 +6,7 @@ importScripts('./settings.ns');
 importScripts('./myLogger.ns');
 let XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
 
-setCurrentLogLevel(LOGLEVEL_TRACE);
+setCurrentLogLevel(LOGLEVEL_DEBUG);
 
 if (isInfo()) {
     console.log(ts() + " Starting CheckServer2openHAB");
@@ -20,39 +20,61 @@ serverStatusMessage = 'Updating serverstatus ' + ts();
 sendCommand(OPENHAB_ITEM_ServerStatus, serverStatusMessage);
 
 runUpdate();
-// Run Every Hour after first run
-setInterval(() => {
-    runUpdate();
-}, 60 * 60 * 1000);
+
+// Run Every Hour after first run if parameter 'forever' is present
+let runForEver = false;
+process.argv.forEach(function (val, index, array) {
+    if ('forever' === val) {
+        runForEver = true;
+    }
+});
+
+// Give time to process arguments
+if (runForEver) {
+    setTimeout(() => {
+        setInterval(() => {
+            runUpdate();
+        }, 60 * 60 * 1000);
+    }, 1000);
+}
 
 function runUpdate() {
     const os = require('os');
     const ip = require('ip');
     const bytes = require('bytes');
+    const util = require('util');
     // First some Basic Info about this server
     serverStatusMessage = '';
-    serverStatusMessage += '\nHostname : ' + os.hostname();
-    serverStatusMessage += '\nIP-Address : ' + ip.address();
-    serverStatusMessage += '\nOS : ' + os.type() +' ' + os.platform() + ' ' + os.arch() + ' ' + os.release();
+    serverStatusMessage += '\n' + addPad('Hostname') + os.hostname();
+    serverStatusMessage += '\n' + addPad('IP-Address') + ip.address();
+    serverStatusMessage += '\n' + addPad('OS') + os.type() +' ' + os.platform() + ' ' + os.arch() + ' ' + os.release();
     const upTime = seconds2json(os.uptime);
-    serverStatusMessage += '\nUpTime : ' + upTime.days + ' days, ' + fix2digit(upTime.hours) + ':' + fix2digit(upTime.minutes) + ':' + fix2digit(upTime.seconds);
-    serverStatusMessage += '\nLoad : ' + os.loadavg();
-    serverStatusMessage += '\nMemory : ' + bytes.format(os.totalmem()) + ',  ' + bytes.format(os.freemem()) + ' free';
+    serverStatusMessage += '\n' + addPad('UpTime') + upTime.days + ' days, ' + fix2digit(upTime.hours) + ':' + fix2digit(upTime.minutes) + ':' + fix2digit(upTime.seconds);
+    serverStatusMessage += '\n' + addPad('Load') + os.loadavg();
+    serverStatusMessage += '\n' + addPad('Memory') + bytes.format(os.totalmem()) + ',  ' + bytes.format(os.freemem()) + ' free';
     // Check some local running processes
-    serverStatusMessage += '\n' + S1_NAME + ' : ' + checkProcess(S1_PIDFILE, S1_PROCESS);
-    serverStatusMessage += '\n' + S2_NAME + ' : ' + checkProcess(S2_PIDFILE, S2_PROCESS);
-    serverStatusMessage += '\n' + S3_NAME + ' : ' + checkProcess(S3_PIDFILE, S3_PROCESS);
+    serverStatusMessage += '\n' + addPad(S1_NAME) + checkProcess(S1_PIDFILE, S1_PROCESS);
+    serverStatusMessage += '\n' + addPad(S2_NAME) + checkProcess(S2_PIDFILE, S2_PROCESS);
+    serverStatusMessage += '\n' + addPad(S3_NAME) + checkProcess(S3_PIDFILE, S3_PROCESS);
 
     // Send the data to openHAB
     setTimeout(
         function() {
-            serverStatusMessage = '\nLastRun............: ' + ts() + serverStatusMessage;
-            sendCommand(OPENHAB_ITEM_ServerStatus, serverStatusMessage);
+            const tmpMsg = addPad('LastRun') + ts() + serverStatusMessage;
+            sendCommand(OPENHAB_ITEM_ServerStatus, tmpMsg);
             if (isInfo()) {
-                console.log(ts() + ' openHAB item: ' + OPENHAB_ITEM_ServerStatus + ' => ' + serverStatusMessage.substr(0,20) + '...');
+                console.log(ts() + ' openHAB item: ' + OPENHAB_ITEM_ServerStatus + ' updated');
             }
             },
         DELAY_BETWEEN_CALLS);
+}
+
+function addPad(s) {
+    let ret = '';
+    ret += s;
+    ret += '.'.repeat(20 - s.length);
+    ret += ': ';
+    return ret;
 }
 
 /**
@@ -71,15 +93,22 @@ function checkProcess(pidFileName, processName) {
         }
         myPid = myPid.trim();
         const childProcess = require('child_process');
-        let stdout = childProcess.execSync('ps -ef | grep "' + processName + '" | grep ' + myPid +  ' | grep -v grep');
-        if (stdout && stdout.length>0) {
-            if (isTrace()) {
-                console.log(ts() + ' OK stdout: ' + stdout);
+        const myCmd = 'ps -ef | grep "' + processName + '" | grep ' + myPid +  ' | grep -v grep';
+        if (isDebug()) {
+            console.log('Getting PID: ' + myPid + ' from pidfile: ' + pidFileName);
+            console.log('Checking result from command: ' + myCmd);
+        }
+        let stdout;
+        try {
+            stdout = childProcess.execSync(myCmd);
+            if (stdout && stdout.length>0) {
+                return 'Process ' + processName +  ' is running with PID=' + myPid;
+            } else {
+                return 'No such process is running';
             }
-            return 'Process ' + processName +  ' is running with PID=' + myPid;
-        } else {
-            if (isInfo()) {
-                console.log(ts() + ' ERROR stdout: ' + stdout);
+        } catch (ex) {
+            if (isError() ) {
+                console.log(ts() + ' ERROR ??? ' + ex.stdout);
             }
             return 'No such process is running';
         }

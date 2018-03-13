@@ -17,3 +17,5 @@
 Thumbs.db
 /nilu2openhab.log
 /pid_snilu2openhab.pid
+/checkserver2openhab.log
+/pid_checkserver2openhab.pid
