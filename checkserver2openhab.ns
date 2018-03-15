@@ -53,8 +53,8 @@ function runUpdate() {
     serverStatusMessage += '\n' + addPad('Memory') + bytes.format(os.totalmem()) + ',  ' + bytes.format(os.freemem()) + ' free';
     // Check some local running processes
     if (S1_NAME && S1_NAME.length>0) { serverStatusMessage += '\n' + addPad(S1_NAME) + checkProcess(S1_PIDFILE, S1_PROCESS); }
-    if (S2_NAME && S1_NAME.length>0) { serverStatusMessage += '\n' + addPad(S2_NAME) + checkProcess(S2_PIDFILE, S2_PROCESS); }
-    if (S3_NAME && S1_NAME.length>0) { serverStatusMessage += '\n' + addPad(S3_NAME) + checkProcess(S3_PIDFILE, S3_PROCESS); }
+    if (S2_NAME && S2_NAME.length>0) { serverStatusMessage += '\n' + addPad(S2_NAME) + checkProcess(S2_PIDFILE, S2_PROCESS); }
+    if (S3_NAME && S3_NAME.length>0) { serverStatusMessage += '\n' + addPad(S3_NAME) + checkProcess(S3_PIDFILE, S3_PROCESS); }
 
     // Send the data to openHAB
     setTimeout(
