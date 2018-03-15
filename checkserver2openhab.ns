@@ -137,11 +137,27 @@ function checkFR24Feed(myCmd) {
     try {
         stdout = childProcess.execSync(myCmd);
         if (stdout && stdout.length>0) {
-            if (isDebug()) {
-                console.log('result from ' + myCmd + ':');
+            if (isTrace()) {
+                console.log('Buffer stdout:');
+                console.log('=======================================================');
                 console.log(stdout);
+                console.log('=======================================================');
             }
-            return ' OK \n' + stdout;
+            let stdOutStr = stdout.toString();
+            if (isDebug()) {
+                console.log(stdOutStr);
+            }
+            let retString = ' Running OK \n';
+            retString += stdOutStr;
+            let strSearch = 'FR24 ';
+            let strReplace = '.' + '.'.repeat(17) + ': FR24 ';
+            console.log('Trying to replace "' + strSearch + '" with "' + strReplace + '"');
+            retString = retString.split(strSearch).join(strReplace);
+            strSearch = 'Receiver: connected (';
+            strReplace = '.' + '.'.repeat(17) + ': Receiver: connected (';
+            console.log('Trying to replace "' + strSearch + '" with "' + strReplace + '"');
+            retString = retString.split(strSearch).join(strReplace);
+            return retString;
         } else {
             return ' Unable to check using ' + myCmd;
         }
