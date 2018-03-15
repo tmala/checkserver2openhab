@@ -85,6 +85,11 @@ function addPad(s) {
  * @param processName
  */
 function checkProcess(pidFileName, processName) {
+    // Handle FR24FEED specially
+    if (pidFileName === 'fr24feed') {
+        return checkFR24Feed(processName);
+    }
+
     let fs = require('fs');
     let myPid = '';
     if (fs.existsSync(pidFileName)) {
@@ -93,11 +98,6 @@ function checkProcess(pidFileName, processName) {
             return 'No such PID-file found';
         }
         myPid = myPid.trim();
-    }
-
-    // Handle FR24FEED specially
-    if (myPid === 'fr24feed') {
-        return checkFR24Feed(processName);
     }
 
     const childProcess = require('child_process');
