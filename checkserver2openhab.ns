@@ -5,7 +5,7 @@ importScripts = require('./importscripts.js').importScripts;
 importScripts('./settings.ns');
 importScripts('./myLogger.ns');
 let XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
-const NAME_LENGTH = 18;
+const NAME_LENGTH = 16;
 
 setCurrentLogLevel(LOGLEVEL_DEBUG);
 
@@ -22,7 +22,7 @@ sendCommand(OPENHAB_ITEM_ServerStatus, serverStatusMessage);
 
 // Run Every Hour after first run if parameter 'forever' is present
 let runForEver = false;
-process.argv.forEach(function (val, index, array) {
+process.argv.forEach(function (val) {
     if ('forever' === val) {
         runForEver = true;
     }
@@ -41,7 +41,6 @@ function runUpdate() {
     const os = require('os');
     const ip = require('ip');
     const bytes = require('bytes');
-    const util = require('util');
     // First some Basic Info about this server
     serverStatusMessage = '';
     serverStatusMessage += '\n' + addPad('Hostname') + os.hostname();
@@ -49,7 +48,7 @@ function runUpdate() {
     serverStatusMessage += '\n' + addPad('OS') + os.type() +' ' + os.platform() + ' ' + os.arch() + ' ' + os.release();
     const upTime = seconds2json(os.uptime);
     serverStatusMessage += '\n' + addPad('UpTime') + upTime.days + ' days, ' + fix2digit(upTime.hours) + ':' + fix2digit(upTime.minutes) + ':' + fix2digit(upTime.seconds);
-    serverStatusMessage += '\n' + addPad('Load') + os.loadavg();
+    serverStatusMessage += '\n' + addPad('Load') + formatLoadAvg(os.loadavg().toString());
     serverStatusMessage += '\n' + addPad('Memory') + bytes.format(os.totalmem()) + ',  ' + bytes.format(os.freemem()) + ' free';
     // Check some local running processes
     if (S1_NAME && S1_NAME.length>0) { serverStatusMessage += '\n' + addPad(S1_NAME) + checkProcess(S1_PIDFILE, S1_PROCESS); }
@@ -68,10 +67,31 @@ function runUpdate() {
         DELAY_BETWEEN_CALLS);
 }
 
+/**
+ * Format a string which is a list of numbers to fewer decimals
+ *  "0.09765,1.2345,2.4589" => "0.09, 1.23, 2.45"
+ *  CaveEat: Could not get number.toFixed(2) to work...
+ *
+ * @param loadAvgStr
+ * @returns {string}
+ */
+function formatLoadAvg(loadAvgStr) {
+    let ret = '';
+    let sep = '';
+    loadAvgStr.split(',').forEach((val) => {
+        let valStr = '' + val.toString();
+        if (valStr.length > 4 && valStr.indexOf('.')===1 ) {
+            valStr = valStr.substr(0,4);
+        }
+        ret += sep + valStr;
+        sep = ', ';
+    });
+    return ret;
+}
+
 function addPad(s) {
     let ret = '';
     ret += s;
-
     ret += '.'.repeat(NAME_LENGTH - s.length);
     ret += ': ';
     return ret;
@@ -151,11 +171,11 @@ function checkFR24Feed(myCmd) {
             let retString = ' Running OK \n';
             retString += stdOutStr;
             let strSearch = 'FR24 ';
-            let strReplace = '.' + '.'.repeat(17) + ': FR24 ';
+            let strReplace = '.' + '.'.repeat(NAME_LENGTH + 1) + ': FR24 ';
             console.log('Trying to replace "' + strSearch + '" with "' + strReplace + '"');
             retString = retString.split(strSearch).join(strReplace);
             strSearch = 'Receiver: connected (';
-            strReplace = '.' + '.'.repeat(17) + ': Receiver: connected (';
+            strReplace = '.' + '.'.repeat(NAME_LENGTH + 1) + ': Receiver: connected (';
             console.log('Trying to replace "' + strSearch + '" with "' + strReplace + '"');
             retString = retString.split(strSearch).join(strReplace);
             return retString;
