@@ -173,11 +173,11 @@ function checkFR24Feed(myCmd) {
             let retString = ' Running OK \n';
             retString += stdOutStr;
             let strSearch = 'FR24 ';
-            let strReplace = '.' + '.'.repeat(NAME_LENGTH + 1) + ': FR24 ';
+            let strReplace = '.' + '.'.repeat(NAME_LENGTH - 1) + ': FR24 ';
             console.log('Trying to replace "' + strSearch + '" with "' + strReplace + '"');
             retString = retString.split(strSearch).join(strReplace);
             strSearch = 'Receiver: connected (';
-            strReplace = '.' + '.'.repeat(NAME_LENGTH + 1) + ': Receiver: connected (';
+            strReplace = '.' + '.'.repeat(NAME_LENGTH - 1) + ': Receiver: connected (';
             console.log('Trying to replace "' + strSearch + '" with "' + strReplace + '"');
             retString = retString.split(strSearch).join(strReplace);
             return retString;
