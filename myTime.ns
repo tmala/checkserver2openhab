@@ -1,0 +1,66 @@
+/***********************************************************
+ * Some DATETIME-related functions
+ ***********************************************************
+ */
+function myTime_ts() {
+    return myTime_date2str_NO(new Date());
+}
+function myTime_toLocaleTime(dt_timestamp) {
+    if (dt_timestamp === null || dt_timestamp.length < 10 || dt_timestamp.indexOf('Z') < 1 ) {
+        return dt_timestamp;
+    }
+    let d = new Date(Date.parse(dt_timestamp));
+    return myTime_fix2digit(d.getDate()) + '.' + myTime_fixMonth(d.getMonth()) + '.' + d.getFullYear() + ' ' +
+        myTime_fix2digit(d.getHours()) + ':' +
+        myTime_fix2digit(d.getMinutes()) + ':' +
+        myTime_fix2digit(d.getSeconds());
+}
+
+function myTime_date2str_NO(date) {
+    return myTime_fix2digit(date.getDate()) + '.' + myTime_fixMonth(date.getMonth()) + '.' + date.getFullYear() + ' ' +
+        myTime_fix2digit(date.getHours()) + ':' + myTime_fix2digit(date.getMinutes()) + ':' + myTime_fix2digit(date.getSeconds());
+}
+
+/**
+ * Returns a Date.month-value to ISO-correct Month-value
+ * Example: January is '0' => returns '01', December is '11' => returns '12'
+ *
+ * @param month A number representing the Month where January = 0 ... December = 11
+ * @returns {string}
+ */
+function myTime_fixMonth(month) {
+    return myTime_fix2digit(++month);
+}
+
+/**
+ * Returns a string with leading zero if num < 10
+ * example: '8' => '08'
+ *
+ * @param num
+ * @returns {string}
+ */
+function myTime_fix2digit(num) {
+    return (num < 10) ?  '0' + num : '' + num;
+}
+
+/**
+ * converts seconds to a json-object
+ * @param seconds
+ * @returns {{days: number, hours: number, minutes: number, seconds: number}}
+ */
+function myTime_seconds2json(seconds) {
+    let d, h, m, s;
+
+    if (isNaN(seconds)) {
+        throw new TypeError('Value sent to seconds-converter must be a number.');
+    }
+
+    m = Math.floor(seconds / 60);
+    s = seconds % 60;
+    h = Math.floor(m / 60);
+    m = m % 60;
+    d = Math.floor(h / 24);
+    h = h % 24;
+
+    return {days: d, hours: h, minutes: m, seconds: s}
+}

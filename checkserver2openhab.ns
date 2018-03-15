@@ -3,21 +3,23 @@
  */
 importScripts = require('./importscripts.js').importScripts;
 importScripts('./settings.ns');
-importScripts('./myLogger.ns');
+importScripts('./myLog.ns');
+importScripts('./myTime.ns');
+
 let XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
 const NAME_LENGTH = 16;
 
 setCurrentLogLevel(LOGLEVEL_DEBUG);
 
 if (isInfo()) {
-    console.log(ts() + " Starting CheckServer2openHAB");
+    console.log(myTime_ts() + " Starting CheckServer2openHAB");
 }
 
 const DELAY_BETWEEN_CALLS = 5*1000; // 5 seconds
 
 let serverStatusMessage = '';
 
-serverStatusMessage = 'Updating serverstatus ' + ts();
+serverStatusMessage = 'Updating serverstatus ' + myTime_ts();
 sendCommand(OPENHAB_ITEM_ServerStatus, serverStatusMessage);
 
 // Run Every Hour after first run if parameter 'forever' is present
@@ -46,8 +48,8 @@ function runUpdate() {
     serverStatusMessage += '\n' + addPad('Hostname') + os.hostname();
     serverStatusMessage += '\n' + addPad('IP-Address') + ip.address();
     serverStatusMessage += '\n' + addPad('OS') + os.type() +' ' + os.platform() + ' ' + os.arch() + ' ' + os.release();
-    const upTime = seconds2json(os.uptime);
-    serverStatusMessage += '\n' + addPad('UpTime') + upTime.days + ' days, ' + fix2digit(upTime.hours) + ':' + fix2digit(upTime.minutes) + ':' + fix2digit(upTime.seconds);
+    const upTime = myTime_seconds2json(os.uptime);
+    serverStatusMessage += '\n' + addPad('UpTime') + upTime.days + ' days, ' + myTime_fix2digit(upTime.hours) + ':' + myTime_fix2digit(upTime.minutes) + ':' + myTime_fix2digit(upTime.seconds);
     serverStatusMessage += '\n' + addPad('Load') + formatLoadAvg(os.loadavg().toString());
     serverStatusMessage += '\n' + addPad('Memory') + bytes.format(os.totalmem()) + ',  ' + bytes.format(os.freemem()) + ' free';
     // Check some local running processes
@@ -58,10 +60,10 @@ function runUpdate() {
     // Send the data to openHAB
     setTimeout(
         function() {
-            const tmpMsg = addPad('LastRun') + ts() + serverStatusMessage;
+            const tmpMsg = addPad('LastRun') + myTime_ts() + serverStatusMessage;
             sendCommand(OPENHAB_ITEM_ServerStatus, tmpMsg);
             if (isInfo()) {
-                console.log(ts() + ' openHAB item: ' + OPENHAB_ITEM_ServerStatus + ' updated');
+                console.log(myTime_ts() + ' openHAB item: ' + OPENHAB_ITEM_ServerStatus + ' updated');
             }
             },
         DELAY_BETWEEN_CALLS);
@@ -143,7 +145,7 @@ function checkProcess(pidFileName, processName) {
         }
     } catch (error) {
         if (isError() ) {
-            console.log(ts() + ' ERROR ??? ' + error.stdout);
+            console.log(myTime_ts() + ' ERROR ??? ' + error.stdout);
         }
         return 'No such process is running';
     }
@@ -184,7 +186,7 @@ function checkFR24Feed(myCmd) {
         }
     } catch (ex) {
         if (isError() ) {
-            console.log(ts() + ' ERROR ??? ' + myCmd);
+            console.log(myTime_ts() + ' ERROR ??? ' + myCmd);
         }
         return 'No output from ' + myCmd;
     }
@@ -207,12 +209,12 @@ function sendCommand(itemId, command) {
             if (this.status === 200) {
                 let res = this.responseText;
                 if (isTrace()) {
-                    console.log(ts() + " " + this.status +  " OK => Response: ", res);
+                    console.log(myTime_ts() + " " + this.status +  " OK => Response: ", res);
                 }
             } else {
                 let res = this.responseText;
                 if (isError()) {
-                    console.log(ts() + " " + this.status +  " " + this.statusText + " => Response: ", JSON.stringify(res, null, 2) );
+                    console.log(myTime_ts() + " " + this.status +  " " + this.statusText + " => Response: ", JSON.stringify(res, null, 2) );
                 }
             }
         }
@@ -221,49 +223,3 @@ function sendCommand(itemId, command) {
     xhr_sendCommand.setRequestHeader("accept", "application/json");
     xhr_sendCommand.send(command);
 }
-
-/***********************************************************
- * Some DATETIME-related functions
- ***********************************************************
- */
-function ts() {
-    let d = new Date();
-    return date2str_NO(d);
-}
-function date2str_NO(d) {
-    return fix2digit(d.getDate()) + '.' + fixMonth(d.getMonth()) + '.' + d.getFullYear() + ' ' +
-        fix2digit(d.getHours()) + ':' + fix2digit(d.getMinutes()) + ':' + fix2digit(d.getSeconds());
-}
-function fixMonth(num) {
-    let month = num + 1;
-    if (month < 10) {
-        return '0' + month;
-    } else {
-        return '' + month;
-    }
-}
-function fix2digit(num) {
-    if (num < 10) {
-        return '0' + num;
-    } else {
-        return '' + num;
-    }
-}
-function seconds2json(seconds) {
-    let d, h, m, s;
-
-    if (isNaN(seconds)) {
-        throw new TypeError('Value sent to seconds-converter must be a number.');
-    }
-
-    m = Math.floor(seconds / 60);
-    s = seconds % 60;
-    h = Math.floor(m / 60);
-    m = m % 60;
-    d = Math.floor(h / 24);
-    h = h % 24;
-
-    return {days: d, hours: h, minutes: m, seconds: s}
-}
-
-
