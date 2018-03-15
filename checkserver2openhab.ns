@@ -116,7 +116,7 @@ function checkProcess(pidFileName, processName) {
     try {
         stdout = childProcess.execSync(myCmd);
         if (stdout && stdout.length>0) {
-            return 'Process ' + processName +  ' is running ' + stdout;
+            return 'Process ' + processName +  ' OK ' + stdout;
         } else {
             return 'No such process is running';
         }
