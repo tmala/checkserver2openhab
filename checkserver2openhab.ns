@@ -141,7 +141,7 @@ function checkFR24Feed(myCmd) {
                 console.log('result from ' + myCmd + ':');
                 console.log(stdout);
             }
-            return '' + stdout;
+            return ' OK \n' + stdout;
         } else {
             return ' Unable to check using ' + myCmd;
         }
