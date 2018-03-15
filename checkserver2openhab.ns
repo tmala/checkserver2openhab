@@ -86,40 +86,45 @@ function addPad(s) {
  */
 function checkProcess(pidFileName, processName) {
     let fs = require('fs');
+    let myPid = '';
     if (fs.existsSync(pidFileName)) {
-        let myPid = fs.readFileSync(pidFileName, 'utf8');
-        if ( !myPid || myPid.trim().length<=1 ) {
+        myPid = fs.readFileSync(pidFileName, 'utf8');
+        if (!myPid || myPid.trim().length <= 1) {
             return 'No such PID-file found';
         }
         myPid = myPid.trim();
+    }
 
-        // Handle FR24FEED specially
-        if (myPid === 'fr24feed') {
-            return checkFR24Feed(processName);
+    // Handle FR24FEED specially
+    if (myPid === 'fr24feed') {
+        return checkFR24Feed(processName);
+    }
+
+    const childProcess = require('child_process');
+    let myCmd = 'ps -ef | grep "' + processName + '"';
+    if (myPid && myPid.length > 0) {
+        myCmd += ' | grep ' + myPid;
+    }
+
+    myCmd += ' | grep -v grep | awk \'{print "pid: "$2" runTime: "$7}\'';
+
+    if (isDebug()) {
+        console.log('Getting PID: ' + myPid + ' from pidfile: ' + pidFileName);
+        console.log('Checking result from command: ' + myCmd);
+    }
+    let stdout;
+    try {
+        stdout = childProcess.execSync(myCmd);
+        if (stdout && stdout.length>0) {
+            return 'Process ' + processName +  ' is running ' + stdout;
         } else {
-            const childProcess = require('child_process');
-            const myCmd = 'ps -ef | grep "' + processName + '" | grep ' + myPid +  ' | grep -v grep';
-            if (isDebug()) {
-                console.log('Getting PID: ' + myPid + ' from pidfile: ' + pidFileName);
-                console.log('Checking result from command: ' + myCmd);
-            }
-            let stdout;
-            try {
-                stdout = childProcess.execSync(myCmd);
-                if (stdout && stdout.length>0) {
-                    return 'Process ' + processName +  ' is running with PID=' + myPid;
-                } else {
-                    return 'No such process is running';
-                }
-            } catch (ex) {
-                if (isError() ) {
-                    console.log(ts() + ' ERROR ??? ' + ex.stdout);
-                }
-                return 'No such process is running';
-            }
+            return 'No such process is running';
         }
-    } else {
-        return 'PID-file does not exist';
+    } catch (ex) {
+        if (isError() ) {
+            console.log(ts() + ' ERROR ??? ' + ex.stdout);
+        }
+        return 'No such process is running';
     }
 }
 
