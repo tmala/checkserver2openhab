@@ -117,13 +117,13 @@ function checkProcess(pidFileName, processName) {
         stdout = childProcess.execSync(myCmd);
         if (stdout && stdout.length>0) {
             let strStdOut = stdout.toString();
-            return 'Process ' + processName +  ' OK ' + strStdOut.trim();
+            return 'OK ' + strStdOut.trim();
         } else {
             return 'No such process is running';
         }
-    } catch (ex) {
+    } catch (error) {
         if (isError() ) {
-            console.log(ts() + ' ERROR ??? ' + ex.stdout);
+            console.log(ts() + ' ERROR ??? ' + error.stdout);
         }
         return 'No such process is running';
     }
