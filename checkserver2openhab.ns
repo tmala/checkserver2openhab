@@ -47,7 +47,7 @@ function runUpdate() {
     serverStatusMessage = '';
     serverStatusMessage += '\n' + addPad('Hostname') + os.hostname();
     serverStatusMessage += '\n' + addPad('IP-Address') + ip.address();
-    serverStatusMessage += '\n' + addPad('OS') + os.type() +' ' + os.platform() + ' ' + os.arch() + ' ' + os.release();
+    serverStatusMessage += '\n' + addPad('OS') + os.type() + ' ' + os.arch() + ' ' + os.release();
     const upTime = myTime_seconds2json(os.uptime);
     serverStatusMessage += '\n' + addPad('UpTime') + upTime.days + ' days, ' + myTime_fix2digit(upTime.hours) + ':' + myTime_fix2digit(upTime.minutes) + ':' + myTime_fix2digit(upTime.seconds);
     serverStatusMessage += '\n' + addPad('Load') + formatLoadAvg(os.loadavg().toString());
